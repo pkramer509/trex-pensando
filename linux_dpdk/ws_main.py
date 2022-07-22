@@ -6,20 +6,20 @@
 
 VERSION='0.0.1'
 APPNAME='cxx_test'
-import os;
-import shutil;
-import copy;
-import re
-import uuid
-import subprocess
+import copy
+import os
 import platform
-from waflib import Logs
-from waflib.Configure import conf
-from waflib import Build
+import re
+import shutil
+import subprocess
 import sys
-import compile_bird
-
+import uuid
 from distutils.version import StrictVersion
+
+from waflib import Build, Logs
+from waflib.Configure import conf
+
+import compile_bird
 
 # use hostname as part of cache filename
 Build.CACHE_SUFFIX = '_%s_cache.py' % platform.node()
@@ -732,6 +732,7 @@ main_src = SrcGroup(dir='src',
              'drivers/trex_driver_base.cpp',
              'drivers/trex_driver_bnxt.cpp',
              'drivers/trex_driver_i40e.cpp',
+             'drivers/trex_driver_ionic.cpp',
              'drivers/trex_driver_igb.cpp',
              'drivers/trex_driver_ixgbe.cpp',
              'drivers/trex_driver_mlx5.cpp',
@@ -1239,8 +1240,25 @@ i40e_dpdk_src = SrcGroup(
         'i40e_tm.c',
         'i40e_vf_representor.c',
         'rte_pmd_i40e.c',
-    ]);
-
+    ])
+ionic_dpdk_src = SrcGroup(
+    dir = 'src/dpdk/drivers/',
+    src_list = [
+        'common/ionic/ionic_common.c',
+        'common/ionic/ionic_common_uio.c',
+        'net/ionic/ionic_dev.c',
+        'net/ionic/ionic_dev_pci.c',
+        'net/ionic/ionic_dev_vdev.c',
+        'net/ionic/ionic_ethdev.c',
+        'net/ionic/ionic_lif.c',
+        'net/ionic/ionic_mac_api.c',
+        'net/ionic/ionic_main.c',
+        'net/ionic/ionic_mem_bypass.c',
+        'net/ionic/ionic_rx_filter.c',
+        'net/ionic/ionic_rxtx.c',
+        'net/ionic/ionic_rxtx_sg.c',
+        'net/ionic/ionic_rxtx_simple.c',
+    ])
 mlx5_x86_64_dpdk_src = SrcGroup(
     dir = 'src/dpdk/drivers/',
     src_list = [
@@ -1343,7 +1361,8 @@ if march == 'x86_64':
     bp_dpdk = SrcGroups([
                   dpdk_src,
                   i40e_dpdk_src,
-                  dpdk_src_x86_64
+                  dpdk_src_x86_64,
+                  ionic_dpdk_src
                   ]);
 
     # BPF + JIT
@@ -1384,6 +1403,10 @@ ntacc_dpdk =SrcGroups([
 i40e_dpdk =SrcGroups([
                 i40e_dpdk_src
                 ]);
+
+ionic_dpdk = SrcGroups([
+                ionic_dpdk_src
+                ])
 
 mlx5_x86_64_dpdk =SrcGroups([
                 mlx5_x86_64_dpdk_src
@@ -1546,6 +1569,7 @@ dpdk_includes_path =''' ../src/
                         ../src/pal/linux_dpdk/dpdk2002_'''+ march +'''/
                         ../src/dpdk/drivers/
                         ../src/dpdk/drivers/common/mlx5/
+                        ../src/dpdk/drivers/common/ionic/
                         ../src/dpdk/drivers/net/
                         ../src/dpdk/drivers/net/af_packet/
                         ../src/dpdk/drivers/net/tap/
@@ -1557,6 +1581,7 @@ dpdk_includes_path =''' ../src/
                         ../src/dpdk/drivers/net/enic/base/
                         ../src/dpdk/drivers/net/i40e/
                         ../src/dpdk/drivers/net/i40e/base/
+                        ../src/dpdk/drivers/net/ionic/
                         ../src/dpdk/drivers/net/ixgbe/
                         ../src/dpdk/drivers/net/ixgbe/base/
                         ../src/dpdk/drivers/net/mlx4/
@@ -1908,7 +1933,6 @@ build_types = [
 
 
 def build_prog (bld, build_obj):
-
     #rte_libs =[
     #         'dpdk'];
 
